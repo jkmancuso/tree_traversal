@@ -1,0 +1,20 @@
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: postgres
+    environment:
+      - POSTGRES_HOST_AUTH_METHOD=trust
+      - POSTGRES_DB=test
+    ports:
+      - 5432:5432
+  pg-init:
+    image: postgres:15-alpine
+    depends_on:
+      - postgres
+    entrypoint: [ '/bin/sh', '-c' ]
+    command: |
+      "sleep 5 && psql -h postgres -d test -U postgres -c 'CREATE TABLE IF NOT EXISTS services(id smallserial, latency smallint, cpu smallint, err_rate smallint, PRIMARY KEY(id))'"
+    environment:
+      - POSTGRES_HOST_AUTH_METHOD=trust
+    
+
