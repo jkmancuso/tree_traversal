@@ -13,7 +13,7 @@ services:
       - postgres
     entrypoint: [ '/bin/sh', '-c' ]
     command: |
-      "sleep 5 && psql -h postgres -d test -U postgres -c 'CREATE TABLE IF NOT EXISTS services(id smallserial, latency smallint, cpu smallint, err_rate smallint, PRIMARY KEY(id))'"
+      "sleep 5 && psql -h postgres -d test -U postgres -c 'CREATE TABLE IF NOT EXISTS services(id smallserial, latency smallint, cpu smallint, err_rate smallint, downstream smallint, PRIMARY KEY(id))'"
     environment:
       - POSTGRES_HOST_AUTH_METHOD=trust
     

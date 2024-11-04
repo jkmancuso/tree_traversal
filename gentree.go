@@ -16,8 +16,8 @@ const (
 	query   = "INSERT INTO services(latency, cpu, err_rate, downstream)"
 )
 
-func NewService(downstream *svc) svc {
-	return svc{
+func NewService(downstream *svc) *svc {
+	return &svc{
 		latency:    rand.Intn(100),
 		cpu:        rand.Intn(100),
 		errRate:    rand.Intn(100),
@@ -41,15 +41,19 @@ func main() {
 	}
 
 	var downstream *svc
-	var svcSlice []svc
 	var id int
+	var idSlice []int
+
+	svcMap := make(map[int]*svc)
 
 	for i := 0; i < num; i++ {
 
 		if i == 0 {
 			downstream = &svc{id: 0}
 		} else {
-			downstream = &svcSlice[rand.Intn(len(svcSlice))]
+			randSvcId := idSlice[rand.Intn(len(idSlice))]
+			fmt.Println(randSvcId)
+			downstream = svcMap[randSvcId]
 		}
 
 		service := NewService(downstream)
@@ -69,38 +73,32 @@ func main() {
 			log.Fatal(err)
 		}
 
+		idSlice = append(idSlice, id)
+
 		service.id = id
 		fmt.Println("Running: ", query, id)
 
-		svcSlice = append(svcSlice, service)
+		svcMap[id] = service
 
 	}
 
-	traverse([]int{}, svcSlice, svcSlice[len(svcSlice)-1])
+	traverse([]int{}, svcMap, id)
 
 }
 
-func traverse(visited []int, services []svc, currentSvc svc) {
+func traverse(visited []int, svcMap map[int]*svc, currentId int) {
 
-	if len(services) == 0 {
-		fmt.Println("Empty, returning")
-		return
-	}
+	if !slices.Contains(visited, currentId) {
+		fmt.Printf("ID %d-> downstream %d \n", currentId, svcMap[currentId].downstream.id)
 
-	if slices.Contains(visited, currentSvc.id) {
-		fmt.Printf("Found %d in %v\n", currentSvc.id, visited)
-		return
-	}
+		if svcMap[currentId].downstream.id == 0 {
+			fmt.Println("No more downstream found, exiting")
+			return
+		}
 
-	fmt.Println("At svc node: ", currentSvc.id)
+		visited = append(visited, currentId)
 
-	visited = append(visited, currentSvc.id)
-
-	if currentSvc.downstream != nil {
-		fmt.Println("Next visit is downstream id: ", currentSvc.downstream.id)
-		traverse(visited, services[0:len(services)-1], *currentSvc.downstream)
-	} else {
-		traverse(visited, services[0:len(services)-1], services[len(services)-1])
+		traverse(visited, svcMap, svcMap[currentId].downstream.id)
 	}
 
 }
