@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	num     = 6
+	num     = 12
 	connStr = "user=postgres dbname=test sslmode=disable"
 	query   = "INSERT INTO services(latency, cpu, err_rate, downstream)"
 )
@@ -82,7 +82,9 @@ func main() {
 
 	}
 
-	traverse([]int{}, svcMap, id)
+	traverseImpacted([]int{}, svcMap, idSlice[len(idSlice)-1])
+	//traverse([]int{}, svcMap, idSlice[len(idSlice)-2])
+	//traverse([]int{}, svcMap, idSlice[len(idSlice)-3])
 
 }
 
@@ -91,14 +93,42 @@ func traverse(visited []int, svcMap map[int]*svc, currentId int) {
 	if !slices.Contains(visited, currentId) {
 		fmt.Printf("ID %d-> downstream %d \n", currentId, svcMap[currentId].downstream.id)
 
+		visited = append(visited, currentId)
+
 		if svcMap[currentId].downstream.id == 0 {
-			fmt.Println("No more downstream found, exiting")
+			fmt.Println("No more downstream found")
 			return
 		}
-
-		visited = append(visited, currentId)
 
 		traverse(visited, svcMap, svcMap[currentId].downstream.id)
 	}
 
+}
+
+func traverseImpacted(visited []int, svcMap map[int]*svc, currentId int) {
+
+	if !slices.Contains(visited, currentId) &&
+		isImpacted(svcMap[currentId]) &&
+		isImpacted(svcMap[currentId].downstream) {
+
+		fmt.Printf("ID %d-> downstream %d \n", currentId, svcMap[currentId].downstream.id)
+
+		visited = append(visited, currentId)
+
+		if svcMap[currentId].downstream.id == 0 {
+			fmt.Println("No more downstream found")
+			return
+		}
+
+		traverse(visited, svcMap, svcMap[currentId].downstream.id)
+	}
+
+}
+
+func isImpacted(service *svc) bool {
+	if service.cpu >= 70 || service.latency >= 70 || service.errRate >= 70 {
+		return true
+	}
+
+	return false
 }
